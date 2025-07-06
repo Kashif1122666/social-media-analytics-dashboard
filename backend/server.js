@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
+import redditRoutes from './routes/reddit.js';
+import assistantRoutes from './routes/assistant.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -9,7 +11,18 @@ app.use(cors());
 app.use(express.json());
 
 
-const PORT = process.env.PORT || 5000;
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-.then(() => app.listen(PORT, () => console.log(`Server running on port ${PORT}`)))
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log(`database connected successfully`))
 .catch((err) => console.log(err));
+
+
+// routes 
+
+app.use('/api/reddit', redditRoutes);
+app.use('/api/ai', assistantRoutes);
+
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
