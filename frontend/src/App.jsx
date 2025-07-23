@@ -1,19 +1,17 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import Dashboard from './pages/Dashboard'
-import AssistantChatbox from './components/AssistantChatbox'
+import { Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import RedditSuccess from './pages/RedditSuccess';
+import NotFound from './pages/NotFound';
 
-
-function App() {
-  const [count, setCount] = useState(0)
-
+const App = () => {
   return (
-    <>
-      <Dashboard />
-       <AssistantChatbox />
-    </>
-  )
-}
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/reddit-success" element={<RedditSuccess />} />
+      {/* Optional: Add more routes here */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
-export default App
+export default App;

@@ -19,7 +19,7 @@ const AssistantChatbox = () => {
     setInput('');
 
     try {
-      const res = await axios.post('http://localhost:5000/api/ai/analyze', {
+      const res = await axios.post('http://localhost:3000/api/ai/analyze', {
         message: input,
       });
 

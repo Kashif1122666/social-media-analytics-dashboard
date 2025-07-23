@@ -8,7 +8,7 @@ const RedditAnalytics = () => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/reddit/trending')
+    axios.get('http://localhost:3000/api/reddit/trending')
       .then((res) => setData(res.data))
       .catch((err) => console.error(err));
   }, []);
