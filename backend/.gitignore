@@ -25,3 +25,9 @@ dist-ssr
 *.sw?
 .env
 Google_OAuth.txt
+
+# Prevent secrets from being committed
+.env
+*.env
+Google_OAuth.txt
+
