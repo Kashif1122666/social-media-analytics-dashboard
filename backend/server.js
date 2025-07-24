@@ -98,7 +98,7 @@ app.get('/dashboard', (req, res) => {
 app.get('/logout', (req, res) => {
   req.logout(err => {
     if (err) console.error('Logout error:', err);
-    res.redirect('/login');
+    res.redirect('http://localhost:5173/login');
   });
 });
 
