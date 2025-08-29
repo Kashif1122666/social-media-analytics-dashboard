@@ -21,7 +21,7 @@ const Home = () => {
           transition={{ duration: 1 }}
           className="text-4xl md:text-5xl font-bold text-cyan-400 mb-4 tracking-wider"
         >
-          Unleash AI on Your Social Media Data
+           AI Assistance on Your Social Media Data
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}

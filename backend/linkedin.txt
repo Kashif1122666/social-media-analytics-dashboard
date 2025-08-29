@@ -1,0 +1,12 @@
+Dear Kashif .,
+Thank you for your patience as we reviewed your application.
+We have provisioned your app with id - 225098847, for Standard Tier access to our Sign In with LinkedIn using OpenID Connect.
+
+To get started with development, check out these helpful tools and resources:
+Development docs
+OAuth token generation tools
+Public Postman Workspaces and Collections
+
+
+Happy coding!
+LinkedIn Developer Team
