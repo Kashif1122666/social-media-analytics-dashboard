@@ -1,6 +1,6 @@
 import express from "express";
 import passport from "passport";
-import {  logoutUser } from "../controllers/authController.js";
+import {  login, logoutUser, register } from "../controllers/authController.js";
 import env from "dotenv";
 env.config();
 
@@ -15,6 +15,8 @@ router.get("/google/callback",
 
 // router.get("/login", loginPage);
 // router.get("/dashboard", dashboardPage);
+router.post("/register", register);
+router.post("/login", login);
 router.get("/logout", logoutUser);
 
 export default router;

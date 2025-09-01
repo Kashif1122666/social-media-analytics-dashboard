@@ -1,108 +1,165 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { FaReddit, FaYoutube, FaLinkedin } from 'react-icons/fa';
-import { SparklesCore } from '../components/ui/sparkles'; // optional animated background
-import { Link } from 'react-router-dom';
+// src/pages/Home.jsx
+import { motion } from "framer-motion";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { Bot, BarChart3, Users } from "lucide-react";
+import ThemeToggle from "../components/ThemeToggle"; // 👈 adjust path if needed
+import { useContext } from "react";
+import { ThemeContext } from "../context/ThemeContext";
 
-const platforms = [
-  { name: 'Reddit', icon: <FaReddit className="text-orange-400" size={28} />, description: 'Analyze posts, trends, karma growth, and user engagement.' },
-  { name: 'YouTube', icon: <FaYoutube className="text-red-500" size={28} />, description: 'Track your videos, comments, and viewership analytics.' },
-  { name: 'LinkedIn', icon: <FaLinkedin className="text-blue-500" size={28} />, description: 'Get insights from your posts, articles, and network stats.' },
+const sampleData = [
+  { name: "Mon", value: 40 },
+  { name: "Tue", value: 65 },
+  { name: "Wed", value: 52 },
+  { name: "Thu", value: 78 },
+  { name: "Fri", value: 90 },
 ];
 
-const Home = () => {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-[#050e1f] to-[#020c1b] text-white font-['Orbitron']">
-      {/* Hero Section */}
-      <section className="text-center py-20 px-6 md:px-12">
-        <motion.h1
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-          className="text-4xl md:text-5xl font-bold text-cyan-400 mb-4 tracking-wider"
-        >
-           AI Assistance on Your Social Media Data
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 1 }}
-          className="text-gray-300 max-w-3xl mx-auto text-lg"
-        >
-          Dive into analytics from Reddit, YouTube, and LinkedIn – powered by a futuristic AI assistant designed to help you grow smarter, faster, and further.
-        </motion.p>
-        <motion.div
-          className="mt-10"
-          whileHover={{ scale: 1.05 }}
-        >
-          <Link
-            to="/login"
-            className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold py-3 px-6 rounded-xl transition duration-300 shadow-lg"
-          >
-            Get Started with AI
-          </Link>
-        </motion.div>
-      </section>
-
-      {/* Sparkles or optional glowing background */}
-      <div className="relative h-20">
-        <SparklesCore
-          background="transparent"
-          minSize={0.4}
-          maxSize={1.5}
-          particleDensity={100}
-          className="w-full h-full"
-          particleColor="#00ffff"
-        />
-      </div>
-
-      {/* Platform Sections */}
-      <section className="py-20 px-6 md:px-12 bg-white/5 backdrop-blur-sm border-y border-cyan-700">
-        <h2 className="text-3xl text-center font-bold text-cyan-400 mb-12">Supported Platforms</h2>
-        <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
-          {platforms.map((platform, idx) => (
-            <motion.div
-              key={platform.name}
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-              className="bg-black border border-cyan-600 rounded-2xl p-6 text-center shadow-md hover:shadow-cyan-500/20"
-            >
-              <div className="flex justify-center mb-4">{platform.icon}</div>
-              <h3 className="text-xl font-semibold text-cyan-300 mb-2">{platform.name}</h3>
-              <p className="text-gray-400">{platform.description}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* AI Assistant Section */}
-      <section className="py-20 px-6 md:px-12 bg-gradient-to-br from-[#030617] via-[#040a1f] to-black">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="max-w-5xl mx-auto text-center"
-        >
-          <h2 className="text-3xl text-cyan-400 font-bold mb-6">Your Personal AI Assistant</h2>
-          <p className="text-gray-300 text-lg mb-6">
-            Ask anything about your analytics, get predictions, and unlock deep insights powered by cutting-edge AI (Gemini API for now, custom model coming soon).
-          </p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            className="bg-cyan-500 hover:bg-cyan-600 text-black font-semibold py-2 px-6 rounded-xl transition-all duration-300"
-          >
-            Try AI Assistant
-          </motion.button>
-        </motion.div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-6 text-center text-gray-500 text-sm border-t border-cyan-800 bg-black/80">
-        © 2025 Social Media Analytics Dashboard. All rights reserved.
-      </footer>
-    </div>
-  );
+const handleClick = () => {
+  window.location.href = "http://localhost:5173/login";
 };
 
-export default Home;
+export default function Home() {
+  const { theme } = useContext(ThemeContext);
+
+  return (
+    <div
+      className={`min-h-screen flex flex-col items-center px-6 py-12 transition-colors duration-500 ${
+        theme === "dark"
+          ? "bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white"
+          : "bg-gradient-to-br from-white via-gray-100 to-cyan-100 text-black"
+      }`}
+    >
+      {/* Toggle in top-right */}
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
+      </div>
+
+      {/* HERO */}
+      <motion.div
+        initial={{ opacity: 0, y: -40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+        className="text-center max-w-4xl"
+      >
+        <h1
+          className={`text-5xl md:text-7xl font-extrabold tracking-tight mb-10 bg-clip-text text-transparent drop-shadow-lg ${
+            theme === "dark"
+              ? "bg-gradient-to-r from-blue-400 to-cyan-300"
+              : "bg-gradient-to-r from-blue-600 to-cyan-500"
+          }`}
+        >
+          AI Powered Social Media Analytics
+        </h1>
+        <p
+          className={`text-lg mb-6 mt-6 ${
+            theme === "dark" ? "text-gray-300" : "text-gray-700"
+          }`}
+        >
+          Track engagement, monitor competitors, and unlock deep insights with
+          our next-gen AI assistant.
+        </p>
+        <button
+          onClick={handleClick}
+          className="px-8 py-3 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold shadow-[0_0_20px_rgba(0,200,255,0.6)] hover:scale-105 transition-transform"
+        >
+          🚀 Get Started
+        </button>
+      </motion.div>
+
+      {/* FEATURES */}
+      <div className="grid md:grid-cols-3 gap-8 mt-20 w-full max-w-6xl">
+        {[
+          {
+            icon: <BarChart3 className="w-10 h-10 text-cyan-500" />,
+            title: "Advanced Analytics",
+            desc: "Gain multi-platform insights with detailed charts and metrics.",
+          },
+          {
+            icon: <Users className="w-10 h-10 text-cyan-500" />,
+            title: "Cross-Platform",
+            desc: "Track Reddit, YouTube, LinkedIn — all in one dashboard.",
+          },
+          {
+            icon: <Bot className="w-10 h-10 text-cyan-500" />,
+            title: "AI Assistant",
+            desc: "Chat with your AI assistant to understand trends instantly.",
+          },
+        ].map((f, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.2 }}
+            className={`rounded-2xl shadow-lg p-8 text-center hover:scale-105 transition-transform ${
+              theme === "dark"
+                ? "bg-white/5 border border-white/20 text-white"
+                : "bg-cyan-50 border border-cyan-600 text-black"
+            }`}
+          >
+            <div className="flex justify-center mb-4">{f.icon}</div>
+            <h3 className="text-2xl font-bold mb-3">{f.title}</h3>
+            <p
+              className={`text-sm ${
+                theme === "dark" ? "text-gray-300" : "text-gray-700"
+              }`}
+            >
+              {f.desc}
+            </p>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* ANALYTICS PREVIEW */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.5, duration: 0.6 }}
+        className={`w-full max-w-5xl mt-20 rounded-2xl shadow-xl p-8 transition-colors duration-500 ${
+          theme === "dark"
+            ? "bg-white/5 border border-cyan-500 text-white"
+            : "bg-cyan-50 border border-cyan-600 text-black"
+        }`}
+      >
+        <h2
+          className={`text-3xl font-bold mb-6 ${
+            theme === "dark" ? "text-cyan-300" : "text-cyan-600"
+          }`}
+        >
+          📊 Engagement Overview
+        </h2>
+        <ResponsiveContainer width="100%" height={320}>
+          <LineChart data={sampleData}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke={theme === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"}
+            />
+            <XAxis dataKey="name" stroke={theme === "dark" ? "#aaa" : "#333"} />
+            <YAxis stroke={theme === "dark" ? "#aaa" : "#333"} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: theme === "dark" ? "#0f172a" : "#f9fafb",
+                border: "1px solid #0ea5e9",
+                color: theme === "dark" ? "#fff" : "#000",
+              }}
+            />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke="#00e0ff"
+              strokeWidth={3}
+              dot={{ r: 6, fill: "#00e0ff" }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </motion.div>
+    </div>
+  );
+}
