@@ -4,17 +4,21 @@ import youtubeRoutes from "./routes/youtubeRoutes.js";
 import passport from "./config/passport.js";
 import mongoose from "mongoose";
 import { Session } from "express-session";
-import googleRoutes from "./routes/authRoutes.js";
+import authRoutes from "./routes/auth.js";
 import linkedinRoutes from "./routes/linkedinRoutes.js";
 import redditRoutes from "./routes/redditRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import env from "dotenv";
+import cors from "cors";
 
 
 
 env.config();
 
 const app = express();
+
+app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+
 
 // setting sesssion
 app.use(session({
@@ -28,8 +32,6 @@ app.use(passport.session());
 
 // mongo db 
 mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
 })
 .then(() => console.log("✅ MongoDB connected successfully"))
 .catch((err) => console.error("❌ MongoDB connection error:", err));
@@ -39,23 +41,18 @@ app.use(express.json());
 
             // Routes
 // youtube
-app.use(youtubeRoutes);
+app.use("/auth", youtubeRoutes);
+
 //ai 
-app.use("/ai", aiRoutes);
+app.use("/api", aiRoutes);
 //google
-app.use("/auth",googleRoutes);
+app.use('/auth', authRoutes);
 //linkedin
 app.use("/", linkedinRoutes);
 //reddit
 app.use("/", redditRoutes);
 
-//testing
-app.use("/auth/dashboard" ,(req,res)=>{
-  res.send("welcome server is running")
-})
-app.use("/",(req,res)=>{
-    res.send("welcome server is running")
-});
+
 
 
 const PORT = process.env.PORT || 5000;

@@ -1,9 +1,12 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
 import { ThemeContext } from "../context/ThemeContext";
-import ThemeToggle from "../components/ThemeToggle"; // adjust path if needed
+import ThemeToggle from "../components/ThemeToggle";
+import { toast } from "react-toastify";
+import { register } from "../api/authApi.js";
+import { useNavigate } from "react-router-dom";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -12,10 +15,22 @@ const SignUp = () => {
     password: "",
     confirmPassword: "",
   });
-
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { theme } = useContext(ThemeContext);
+  const navigate = useNavigate();
+
+  // Check for Google OAuth callback token
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    if (token) {
+      localStorage.setItem("token", token);
+      toast.success("Google signup successful 🚀");
+      window.history.replaceState({}, document.title, "/dashboard"); // clean URL
+      navigate("/dashboard");
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -24,9 +39,27 @@ const SignUp = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Signing up with:", formData);
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match!");
+      return;
+    }
+
+    try {
+      const response = await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      toast.success("Account created successfully!");
+      navigate("/login");
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Registration failed!");
+    }
   };
 
   return (
@@ -37,7 +70,6 @@ const SignUp = () => {
           : "bg-gradient-to-br from-white via-gray-100 to-cyan-50 text-black"
       }`}
     >
-      {/* Theme Toggle */}
       <div className="absolute top-6 right-6">
         <ThemeToggle />
       </div>
@@ -89,7 +121,6 @@ const SignUp = () => {
             }`}
           />
 
-          {/* Password Field */}
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
@@ -107,21 +138,14 @@ const SignUp = () => {
             <button
               type="button"
               className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
-                theme === "dark"
-                  ? "text-cyan-300 hover:text-cyan-200"
-                  : "text-cyan-600 hover:text-cyan-800"
+                theme === "dark" ? "text-cyan-300 hover:text-cyan-200" : "text-cyan-600 hover:text-cyan-800"
               }`}
               onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? (
-                <EyeSlashIcon className="h-5 w-5" />
-              ) : (
-                <EyeIcon className="h-5 w-5" />
-              )}
+              {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
             </button>
           </div>
 
-          {/* Confirm Password Field */}
           <div className="relative">
             <input
               type={showConfirmPassword ? "text" : "password"}
@@ -139,26 +163,18 @@ const SignUp = () => {
             <button
               type="button"
               className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
-                theme === "dark"
-                  ? "text-cyan-300 hover:text-cyan-200"
-                  : "text-cyan-600 hover:text-cyan-800"
+                theme === "dark" ? "text-cyan-300 hover:text-cyan-200" : "text-cyan-600 hover:text-cyan-800"
               }`}
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             >
-              {showConfirmPassword ? (
-                <EyeSlashIcon className="h-5 w-5" />
-              ) : (
-                <EyeIcon className="h-5 w-5" />
-              )}
+              {showConfirmPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
             </button>
           </div>
 
           <button
             type="submit"
             className={`w-full font-semibold py-2 rounded-xl transition duration-300 shadow-md ${
-              theme === "dark"
-                ? "bg-cyan-500 hover:bg-cyan-600 text-black"
-                : "bg-cyan-600 hover:bg-cyan-700 text-white"
+              theme === "dark" ? "bg-cyan-500 hover:bg-cyan-600 text-black" : "bg-cyan-600 hover:bg-cyan-700 text-white"
             }`}
           >
             Sign Up
@@ -166,41 +182,22 @@ const SignUp = () => {
         </form>
 
         <div className="flex items-center justify-center mt-6">
-          <span
-            className={`text-sm ${
-              theme === "dark" ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            OR
-          </span>
+          <span className={`text-sm ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>OR</span>
         </div>
 
-        <button
-          onClick={() =>
-            (window.location.href = `${import.meta.env.VITE_BACKEND_URL}/auth/google`)
-          }
+        <motion.a
+          href={`${import.meta.env.VITE_BACKEND_URL}/auth/google`}
           className={`flex items-center justify-center gap-3 w-full mt-4 font-semibold py-2 rounded-xl shadow-md transition-transform duration-200 hover:scale-105 ${
-            theme === "dark"
-              ? "bg-white text-black hover:bg-gray-200"
-              : "bg-cyan-100 text-black hover:bg-cyan-200"
+            theme === "dark" ? "bg-white text-black hover:bg-gray-200" : "bg-cyan-100 text-black hover:bg-cyan-200"
           }`}
         >
           <FcGoogle size={20} />
           Sign up with Google
-        </button>
+        </motion.a>
 
-        <p
-          className={`text-sm mt-6 text-center ${
-            theme === "dark" ? "text-gray-400" : "text-gray-700"
-          }`}
-        >
+        <p className={`text-sm mt-6 text-center ${theme === "dark" ? "text-gray-400" : "text-gray-700"}`}>
           Already have an account?{" "}
-          <a
-            href="/login"
-            className={`hover:underline ${
-              theme === "dark" ? "text-cyan-400" : "text-cyan-600"
-            }`}
-          >
+          <a href="/login" className={`hover:underline ${theme === "dark" ? "text-cyan-400" : "text-cyan-600"}`}>
             Login
           </a>
         </p>

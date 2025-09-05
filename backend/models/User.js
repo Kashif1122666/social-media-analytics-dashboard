@@ -1,47 +1,34 @@
+// models/User.js
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema(
-  {
-    // Local signup
-    email: {
-      type: String,
-      unique: true,
-      sparse: true,
-      required: function () {
-        // Email required only if no OAuth provider
-        return !this.googleId && !this.redditId && !this.linkedinId && !this.youtubeId;
-      },
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, unique: true, required: true },
+  password: { type: String }, // only for Local login
+  provider: { type: String, enum: ["local", "google", "linkedin"], default: "local" },
+  googleId: { type: String },
+  linkedinId: { type: String },
+  avatar: { type: String },
+  platforms: {
+    youtube: {
+      youtubeId: String,
+      title: String,
+      description: String,
+      thumbnail: String,
+      stats: Object,
+      accessToken: String,
+      refreshToken: String,
     },
-    password: {
-      type: String,
-      required: function () {
-        // Password required only for local signup
-        return !this.googleId && !this.redditId && !this.linkedinId && !this.youtubeId;
-      },
+    linkedin: {
+      accessToken: String,
+      refreshToken: String,
     },
-    name: { type: String },
-    avatar: { type: String },
-
-    // OAuth IDs
-    googleId: { type: String, unique: true, sparse: true },
-    redditId: { type: String, unique: true, sparse: true },
-    youtubeId: { type: String, unique: true, sparse: true },
-    linkedinId: { type: String, unique: true, sparse: true },
-
-    // Provider tokens (encrypt if possible)
-    googleAccessToken: { type: String },
-    googleRefreshToken: { type: String },
-    redditAccessToken: { type: String },
-    redditRefreshToken: { type: String },
-    youtubeAccessToken: { type: String },
-    youtubeRefreshToken: { type: String },
-    linkedinAccessToken: { type: String },
-    linkedinRefreshToken: { type: String },
-
-    // Which method they signed up with
-    provider: { type: String, enum: ["local", "google", "reddit", "youtube", "linkedin"], default: "local" },
+    reddit: {
+      redditId: String,
+      redditUsername: String,
+      accessToken: String,
+    },
   },
-  { timestamps: true }
-);
+}, { timestamps: true });
 
 export default mongoose.model("User", userSchema);

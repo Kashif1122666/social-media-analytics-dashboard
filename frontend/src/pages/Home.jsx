@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Bot, BarChart3, Users } from "lucide-react";
-import ThemeToggle from "../components/ThemeToggle"; // 👈 adjust path if needed
+import ThemeToggle from "../components/ThemeToggle"; 
 import { useContext } from "react";
 import { ThemeContext } from "../context/ThemeContext";
 

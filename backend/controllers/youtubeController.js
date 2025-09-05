@@ -1,39 +1,62 @@
-import axios from "axios";
-import env from "dotenv";
-env.config();
-// Called after successful OAuth login
-export const youtubeAuthCallback = (req, res) => {
-  // At this point req.user has YouTube tokens/profile
-  console.log("YouTube user:", req.user);
+import { google } from "googleapis";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-  // If user was logged in before, tokens added to existing account
-  // Otherwise, req.user is a new user created via YouTube login
+const oauth2Client = new google.auth.OAuth2(
+  process.env.YOUTUBE_CLIENT_ID,
+  process.env.YOUTUBE_CLIENT_SECRET,
+  process.env.YOUTUBE_CALLBACK_URL
+);
 
-  res.redirect(`${process.env.FRONTEND_URL}/dashboard`); // Frontend URL
+export const youtubeAuthUrl = (req, res) => {
+  const scopes = [
+    "https://www.googleapis.com/auth/youtube.readonly",
+    "https://www.googleapis.com/auth/yt-analytics.readonly",
+  ];
+  const url = oauth2Client.generateAuthUrl({
+    access_type: "offline",
+    scope: scopes,
+  });
+  res.json({ url });
 };
 
-// Example API call to fetch YouTube data
-export const getYoutubeData = async (req, res) => {
+export const youtubeCallback = async (req, res) => {
   try {
-    if (!req.user || !req.user.youtubeAccessToken) {
-      return res.status(401).json({ message: "Not authenticated with YouTube" });
-    }
+    const { code } = req.query;
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: "No token" });
 
-    const response = await axios.get(
-      "https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true",
-      {
-        headers: {
-          Authorization: `Bearer ${req.user.youtubeAccessToken}`,
-        },
-      }
-    );
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    res.json(response.data);
-  } catch (error) {
-    console.error(
-      "Error fetching YouTube data:",
-      error.response?.data || error.message
-    );
-    res.status(500).json({ message: "Failed to fetch YouTube data" });
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    const youtube = google.youtube("v3");
+    const { data } = await youtube.channels.list({
+      auth: oauth2Client,
+      part: "snippet,statistics",
+      mine: true,
+    });
+
+    const channel = data.items?.[0];
+    if (!channel) return res.status(400).json({ error: "No YouTube channel" });
+
+    user.youtube = {
+      id: channel.id,
+      title: channel.snippet.title,
+      stats: channel.statistics,
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+    };
+    await user.save();
+
+    res.json({ message: "YouTube connected", youtube: user.youtube });
+  } catch (err) {
+    console.error("YouTube error:", err);
+    res.status(500).json({ error: "YouTube connect failed" });
   }
 };
