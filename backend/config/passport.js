@@ -90,7 +90,7 @@ passport.use(
         if (!token) return done(new Error("No token provided"));
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id); // now we have the user
+        const user = await User.findById(decoded.id);
         if (!user) return done(new Error("User not found"));
 
         // YouTube API client
@@ -98,30 +98,145 @@ passport.use(
         oauth2Client.setCredentials({ access_token: accessToken });
 
         const youtube = google.youtube("v3");
+        const youtubeAnalytics = google.youtubeAnalytics("v2");
+
+        // 1️⃣ Fetch channel info
         const { data } = await youtube.channels.list({
           auth: oauth2Client,
           part: "snippet,statistics",
           mine: true,
         });
-
         const channel = data.items?.[0];
         if (!channel) return done(new Error("No YouTube channel found"));
 
-        // Update user with YouTube info
+        // 2️⃣ Fetch top videos
+        const { data: videosData } = await youtube.search.list({
+          auth: oauth2Client,
+          part: "snippet",
+          forMine: true,
+          type: "video",
+          order: "viewCount",
+          maxResults: 10,
+        });
+
+        const topVideos = await Promise.all(
+          (videosData.items || []).map(async (videoItem) => {
+            const videoId = videoItem.id?.videoId;
+            if (!videoId) return null;
+
+            const statsRes = await youtube.videos.list({
+              auth: oauth2Client,
+              part: "statistics,snippet",
+              id: videoId,
+            });
+
+            const item = statsRes.data.items?.[0] || {};
+            const stats = item.statistics || {};
+            const snippet = item.snippet || videoItem.snippet || {};
+
+            return {
+              videoId,
+              title: snippet.title || videoItem.snippet.title,
+              views: Number(stats.viewCount || 0),
+              likes: Number(stats.likeCount || 0),
+              comments: Number(stats.commentCount || 0),
+              uploadedAt: snippet.publishedAt || null,
+              length: snippet.duration || 0,
+              tags: snippet.tags || [],
+              thumbnail:
+                snippet.thumbnails?.default?.url ||
+                videoItem.snippet.thumbnails?.default?.url ||
+                null,
+            };
+          })
+        ).then((arr) => arr.filter(Boolean));
+
+        // 3️⃣ Calculate engagement rate
+        const totalViews = topVideos.reduce((acc, v) => acc + (v.views || 0), 0);
+        const totalLikes = topVideos.reduce((acc, v) => acc + (v.likes || 0), 0);
+        const totalComments = topVideos.reduce((acc, v) => acc + (v.comments || 0), 0);
+        const engagementRate = totalViews > 0 ? ((totalLikes + totalComments) / totalViews) * 100 : 0;
+
+        // 4️⃣ Fetch audience demographics (age & gender)
+        let demographics = {};
+        try {
+          const endDate = new Date().toISOString().split("T")[0];
+          const startDate = new Date();
+          startDate.setDate(startDate.getDate() - 30);
+
+          const demoRes = await youtubeAnalytics.reports.query({
+            auth: oauth2Client,
+            ids: "channel==MINE",
+            startDate: startDate.toISOString().split("T")[0],
+            endDate: endDate,
+            metrics: "viewerPercentage",
+            dimensions: "ageGroup,gender",
+          });
+
+          demographics = (demoRes.data.rows || []).reduce((acc, row) => {
+            const [ageGroup, gender, percentage] = row;
+            if (!acc[ageGroup]) acc[ageGroup] = {};
+            acc[ageGroup][gender] = Number(percentage);
+            return acc;
+          }, {});
+        } catch (err) {
+          console.error("Error fetching demographics:", err.response?.data || err.message);
+        }
+
+        // 5️⃣ Fetch traffic sources
+        let trafficSources = {};
+        try {
+          const trafficRes = await youtubeAnalytics.reports.query({
+            auth: oauth2Client,
+            ids: "channel==MINE",
+            startDate: startDate.toISOString().split("T")[0],
+            endDate: endDate,
+            metrics: "views",
+            dimensions: "insightTrafficSourceType",
+          });
+
+          trafficSources = (trafficRes.data.rows || []).reduce((acc, row) => {
+            const [source, views] = row;
+            acc[source] = Number(views);
+            return acc;
+          }, {});
+        } catch (err) {
+          console.error("Error fetching traffic sources:", err.response?.data || err.message);
+        }
+
+        // Preserve old growth and device arrays if they exist
+        const subscriberGrowth = user.platforms.youtube?.stats?.subscriberGrowth || [];
+        const viewsGrowth = user.platforms.youtube?.stats?.viewsGrowth || [];
+        const audienceDevices = user.platforms.youtube?.stats?.audienceDevices || {};
+
+        // 6️⃣ Update user
         user.platforms.youtube = {
           youtubeId: channel.id,
           title: channel.snippet.title,
-          description: channel.snippet.description,
-          thumbnail: channel.snippet.thumbnails?.default?.url,
+          description: channel.snippet.description || "",
+          thumbnail: channel.snippet.thumbnails?.default?.url || "",
           stats: {
-            subscribers: parseInt(channel.statistics.subscriberCount),
-            views: parseInt(channel.statistics.viewCount),
-            videos: parseInt(channel.statistics.videoCount),
+            subscribers: Number(channel.statistics.subscriberCount || 0),
+            views: Number(channel.statistics.viewCount || 0),
+            videos: Number(channel.statistics.videoCount || 0),
+            engagementRate,
+            growthRate: 0,
+            watchTime: 0,
+            ctr: 0,
+            retention: 0,
+            subscriberGrowth,
+            viewsGrowth,
+            videos: topVideos,
+            lastUpdated: new Date(),
+            audienceAge: demographics,
+            audienceCountries: trafficSources,
+            audienceDevices,
           },
           accessToken,
           refreshToken,
         };
 
+        // Save updated user
         await user.save();
         return done(null, user);
       } catch (err) {
@@ -131,6 +246,7 @@ passport.use(
     }
   )
 );
+
 
 
 // ===================

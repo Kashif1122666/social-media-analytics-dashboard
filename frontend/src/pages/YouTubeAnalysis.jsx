@@ -1,281 +1,406 @@
-// src/pages/YouTubeAnalysis.jsx
-import React, { useEffect, useState, useContext, useRef } from "react";
+import React, { useEffect, useState, useContext } from "react";
+import axios from "axios";
 import { motion } from "framer-motion";
+import { Bot } from "lucide-react";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
+
+import { FaYoutube } from "react-icons/fa";
 import { ThemeContext } from "../context/ThemeContext";
 import ThemeToggle from "../components/ThemeToggle";
-import {
-  ResponsiveContainer,
-  ComposedChart,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  Legend,
-} from "recharts";
-import { toast } from "react-toastify";
-import { FaRobot } from "react-icons/fa";
 
 export default function YouTubeAnalysis() {
-  const { theme } = useContext(ThemeContext);
-  const [analytics, setAnalytics] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [chat, setChat] = useState([
-    { role: "assistant", content: "Hi — ask me about your channel, videos, or growth." },
-  ]);
-  const [message, setMessage] = useState("");
-  const chatEndRef = useRef(null);
+  const [error, setError] = useState(null);
+  const [aiQuery, setAiQuery] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const { theme } = useContext(ThemeContext);
 
   useEffect(() => {
-    const load = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("token");
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/analytics`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) {
-          const txt = await res.text();
-          throw new Error(txt || "Failed to fetch analytics");
-        }
-        const data = await res.json();
-        setAnalytics(data);
+        const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/auth/analytics`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setData(res.data);
       } catch (err) {
-        console.error("Analytics load error:", err);
-        toast.error("Failed to load analytics. Make sure YouTube is connected.");
+        console.error("Error fetching YouTube data", err);
+        setError(
+          "Failed to fetch data. Try again and make sure YouTube is connected."
+        );
       } finally {
         setLoading(false);
       }
     };
-    load();
+    fetchData();
   }, []);
 
-  useEffect(() => {
-    if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: "smooth" });
-  }, [chat]);
+  const COLORS = [
+    "#0088FE",
+    "#00C49F",
+    "#FFBB28",
+    "#FF8042",
+    "#A020F0",
+    "#FF0000",
+  ];
 
-  const handleSend = async (e) => {
-    e?.preventDefault();
-    if (!message.trim()) return;
-    const userMsg = { role: "user", content: message.trim() };
-    setChat((c) => [...c, userMsg]);
-    setMessage("");
-
+  const handleAiAsk = async () => {
+    if (!aiQuery.trim()) return;
     try {
+      setAiLoading(true);
       const token = localStorage.getItem("token");
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/analyze`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ message: userMsg.content }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Assistant error");
-      }
-      const json = await res.json();
-      const reply = json.reply || json.answer || json.data || "No answer";
-      setChat((c) => [...c, { role: "assistant", content: reply }]);
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/ai/analytics`,
+        { query: aiQuery },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setAiResponse(res.data.message);
     } catch (err) {
-      console.error("Assistant error:", err);
-      setChat((c) => [...c, { role: "assistant", content: "Sorry — assistant failed to respond." }]);
+      console.error("AI request failed", err);
+      setAiResponse("AI could not generate advice. Try again later.");
+    } finally {
+      setAiLoading(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-pulse text-xl">Loading your channel analytics...</div>
-        </div>
+      <div
+        className={`flex items-center justify-center min-h-screen transition-colors duration-500 ${
+          theme === "dark"
+            ? "text-white bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900"
+            : "text-black bg-gradient-to-r from-white via-gray-100 to-cyan-100"
+        }`}
+      >
+        <p className="text-lg animate-pulse">Loading YouTube Analytics...</p>
       </div>
     );
   }
 
-  if (!analytics) {
+  if (error) {
     return (
-      <div className="min-h-screen p-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="p-6 rounded-2xl shadow-lg text-center">
-            <h2 className="text-xl font-semibold">No analytics available</h2>
-            <p className="mt-2 text-sm text-gray-500">Connect your YouTube channel first.</p>
-          </div>
+      <div
+        className={`flex items-center justify-center min-h-screen transition-colors duration-500 ${
+          theme === "dark"
+            ? "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white"
+            : "bg-gradient-to-r from-white via-gray-100 to-cyan-100 text-black"
+        }`}
+      >
+        <div
+          className={`p-6 rounded-2xl shadow-lg text-center ${
+            theme === "dark"
+              ? "bg-red-600 text-white"
+              : "bg-red-100 text-red-800 border border-red-400"
+          }`}
+        >
+          <h2 className="text-2xl font-bold mb-2">Something went wrong</h2>
+          <p>{error}</p>
         </div>
       </div>
     );
   }
 
-  const { channel, topVideos } = analytics;
+  if (!data) return null;
 
-  // Chart data
-  const chartData = (topVideos || []).map((v) => ({
-    title: v.title,
-    views: Number(v.views || 0),
-    likes: Number(v.likes || 0),
-  }));
+  const { channel, topVideos, insights } = data;
+
+  const trafficData = Array.isArray(insights?.audienceInsights?.trafficSources)
+    ? insights.audienceInsights.trafficSources
+    : [];
+
+  const growthData = insights?.growthTrends
+    ? Object.entries(insights.growthTrends).map(([metric, values]) => ({
+        metric,
+        current: values.current,
+        previous: values.previous,
+      }))
+    : [];
 
   return (
     <div
-      className={`min-h-screen p-6 transition-colors duration-300 ${
+      className={`min-h-screen p-6 transition-colors duration-500 relative ${
         theme === "dark"
-          ? "bg-gradient-to-br from-black via-gray-900 to-blue-950 text-white"
-          : "bg-gradient-to-br from-white via-gray-100 to-cyan-50 text-black"
+          ? "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white"
+          : "bg-gradient-to-r from-white via-gray-100 to-cyan-100 text-black"
       }`}
     >
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight">YouTube Dashboard</h1>
+      {/* Theme Toggle Top Right */}
+      <div className="absolute top-6 right-6">
         <ThemeToggle />
       </div>
 
-      {/* channel card */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-6 p-6 rounded-2xl shadow-xl mb-6 bg-white/5 border"
-      >
-        <img
-          src={channel.thumbnail}
-          alt="channel"
-          className="w-20 h-20 rounded-full border-2 border-cyan-500"
-        />
-        <div>
-          <h2 className="text-2xl font-semibold">{channel.title}</h2>
-          <p className="text-sm text-gray-300 max-w-xl">{channel.description}</p>
-          <div className="flex gap-6 mt-3 text-sm flex-wrap">
-            <div>👥 <span className="font-semibold">{channel.subscribers}</span> subs</div>
-            <div>▶ <span className="font-semibold">{channel.views}</span> views</div>
-            <div>🎬 <span className="font-semibold">{channel.videos}</span> videos</div>
-            {channel.country && (
-              <div>🌍 <span className="font-semibold">{channel.country}</span></div>
-            )}
-            {channel.publishedAt && (
-              <div>📅 Joined {new Date(channel.publishedAt).toLocaleDateString()}</div>
-            )}
+      {/* Channel Overview */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8">
+        <div className="flex items-center space-x-4">
+          {channel.thumbnail && (
+            <img
+              src={channel.thumbnail}
+              alt="thumbnail"
+              className="w-16 h-16 rounded-full"
+            />
+          )}
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              {channel.title}
+              <a
+                href={`https://www.youtube.com`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-red-600 hover:text-red-700 text-2xl"
+              >
+                <FaYoutube />
+              </a>
+            </h1>
+            <p className={theme === "dark" ? "text-gray-300" : "text-gray-700"}>
+              {channel.description}
+            </p>
           </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          {[
+            { label: "Subscribers", value: channel.subscribers },
+            { label: "Views", value: channel.views },
+            { label: "Videos", value: channel.videos },
+          ].map((item, idx) => (
+            <div
+              key={idx}
+              className={`rounded-2xl p-4 shadow-lg ${
+                theme === "dark"
+                  ? "bg-gray-800"
+                  : "bg-cyan-50 border border-cyan-600"
+              }`}
+            >
+              <h2 className="text-xl">{item.label}</h2>
+              <p className="text-2xl font-bold">{item.value}</p>
+            </div>
+          ))}
         </div>
       </motion.div>
 
-      {/* main grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: charts */}
-        <div className="lg:col-span-2 space-y-6">
-          <div
-            className={`p-4 rounded-2xl shadow-lg ${
-              theme === "dark" ? "bg-white/5" : "bg-white"
-            }`}
-          >
-            <h3 className="text-lg font-semibold mb-4">Top Videos by Views & Likes</h3>
-            <div style={{ width: "100%", height: 300 }}>
-              <ResponsiveContainer>
-                <ComposedChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="title" tick={{ fontSize: 12 }} />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="views" fill="#06b6d4" radius={[6, 6, 0, 0]} />
-                  <Line type="monotone" dataKey="likes" stroke="#f97316" strokeWidth={2} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div
-            className={`p-4 rounded-2xl shadow-lg ${
-              theme === "dark" ? "bg-white/5" : "bg-white"
-            }`}
-          >
-            <h3 className="text-lg font-semibold mb-4">Top Videos List</h3>
-            <div className="space-y-3">
-              {(topVideos || []).map((v) => (
-                <div
-                  key={v.videoId}
-                  className="flex gap-4 items-center p-3 rounded-lg hover:bg-gray-100/20 transition"
-                >
-                  <img
-                    src={v.thumbnail}
-                    alt=""
-                    className="w-20 h-12 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <div className="font-semibold">{v.title}</div>
-                    <div className="text-xs opacity-70">
-                      Views: {v.views} • Likes: {v.likes} • Uploaded:{" "}
-                      {new Date(v.publishedAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <a
-                    href={`https://www.youtube.com/watch?v=${v.videoId}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-sm px-3 py-1 rounded-md bg-cyan-600 text-white"
-                  >
-                    View
-                  </a>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right: AI Assistant */}
+      {/* Insights */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div
-          className={`p-4 rounded-2xl shadow-lg ${
-            theme === "dark" ? "bg-white/5" : "bg-white"
+          className={`rounded-2xl p-6 shadow-lg ${
+            theme === "dark"
+              ? "bg-gray-800"
+              : "bg-cyan-50 border border-cyan-600"
           }`}
         >
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-full bg-cyan-600 text-white">
-              <FaRobot />
-            </div>
-            <div>
-              <h4 className="font-semibold">AI Assistant</h4>
-              <div className="text-xs text-gray-400">
-                Ask questions about this channel (insights, growth tips, content ideas)
-              </div>
-            </div>
-          </div>
+          <h2 className="text-xl mb-4">Engagement Rate</h2>
+          <p className="text-3xl font-bold">{insights.engagementRate}%</p>
+        </div>
 
-          <div className="h-72 overflow-y-auto p-3 mb-3 rounded-md border bg-transparent">
-            {chat.map((m, i) => (
-              <div
-                key={i}
-                className={`mb-3 flex ${
-                  m.role === "assistant" ? "justify-start" : "justify-end"
-                }`}
+       <div
+  className={`rounded-2xl p-6 shadow-xl border backdrop-blur-md ${
+    theme === "dark" ? "bg-gray-800/80 border-gray-700" : "bg-cyan-50 border border-cyan-600"
+  }`}
+>
+  <h2 className="text-xl mb-4 font-semibold">Top Videos Performance</h2>
+  {topVideos.length > 0 ? (
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart
+        data={topVideos}
+        layout="vertical"
+        margin={{ top: 20, right: 30, left: 50, bottom: 20 }}
+        barCategoryGap="20%"
+      >
+        <XAxis
+          type="number"
+          stroke={theme === "dark" ? "#fff" : "#333"}
+          tick={{ fill: theme === "dark" ? "#fff" : "#333", fontSize: 12 }}
+        />
+        <YAxis
+          type="category"
+          dataKey="title"
+          stroke={theme === "dark" ? "#fff" : "#333"}
+          tick={{ fill: theme === "dark" ? "#fff" : "#333", fontSize: 12 }}
+          width={150}
+        />
+        <Tooltip
+          cursor={{ fill: theme === "dark" ? "#1f2937" : "#e0f2fe" }}
+          contentStyle={{
+            backgroundColor: theme === "dark" ? "#0f172a" : "#f9fafb",
+            border: "1px solid #0ea5e9",
+            color: theme === "dark" ? "#fff" : "#000",
+            borderRadius: "8px",
+            padding: "8px",
+          }}
+        />
+        <Bar
+          dataKey="views"
+          name="Views"
+          radius={[10, 10, 10, 10]}
+          fill="url(#viewsGradient)"
+        />
+        <Bar
+          dataKey="likes"
+          name="Likes"
+          radius={[10, 10, 10, 10]}
+          fill="url(#likesGradient)"
+        />
+        <defs>
+          <linearGradient id="viewsGradient" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#00C49F" />
+            <stop offset="100%" stopColor="#00FFAB" />
+          </linearGradient>
+          <linearGradient id="likesGradient" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#FF8042" />
+            <stop offset="100%" stopColor="#FFAA6B" />
+          </linearGradient>
+        </defs>
+      </BarChart>
+    </ResponsiveContainer>
+  ) : (
+    <p className={theme === "dark" ? "text-gray-300" : "text-gray-700"}>
+      No video data available
+    </p>
+  )}
+</div>
+
+      </div>
+
+      {/* Traffic Sources */}
+      {trafficData.length > 0 && (
+        <div
+          className={`rounded-2xl p-6 shadow-lg mb-8 ${
+            theme === "dark"
+              ? "bg-gray-800"
+              : "bg-cyan-50 border border-cyan-600"
+          }`}
+        >
+          <h2 className="text-xl mb-4">Traffic Sources</h2>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={trafficData}
+                dataKey="views"
+                nameKey="source"
+                outerRadius={100}
               >
-                <div
-                  className={`px-4 py-2 max-w-xs rounded-2xl shadow-md ${
-                    m.role === "assistant"
-                      ? "bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900 text-white"
-                      : "bg-gradient-to-r from-cyan-500 to-blue-500 text-white"
+                {trafficData.map((_, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: theme === "dark" ? "#0f172a" : "#f9fafb",
+                  border: "1px solid #0ea5e9",
+                  color: theme === "dark" ? "#fff" : "#000",
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Top Videos */}
+      <div
+        className={`rounded-2xl p-6 shadow-lg mb-8 ${
+          theme === "dark"
+            ? "bg-gray-800"
+            : "bg-cyan-50 border border-cyan-600"
+        }`}
+      >
+        <h2 className="text-xl mb-4">Top Videos</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {topVideos.map((video, idx) => (
+            <a
+              key={idx}
+              href={`https://www.youtube.com/watch?v=${video.videoId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`rounded-xl flex items-center space-x-4 transition ${
+                theme === "dark"
+                  ? "bg-gray-700 hover:bg-gray-600"
+                  : "bg-white hover:bg-cyan-100 border border-cyan-600"
+              } p-4`}
+            >
+              {video.thumbnail && (
+                <img
+                  src={video.thumbnail}
+                  alt={video.title}
+                  className="w-24 h-16 rounded"
+                />
+              )}
+              <div>
+                <h3 className="text-lg font-bold">{video.title}</h3>
+                <p
+                  className={`text-sm ${
+                    theme === "dark" ? "text-gray-300" : "text-gray-700"
                   }`}
                 >
-                  {m.content}
-                </div>
+                  Views: {video.views}
+                </p>
+                <p
+                  className={`text-sm ${
+                    theme === "dark" ? "text-gray-300" : "text-gray-700"
+                  }`}
+                >
+                  Likes: {video.likes}
+                </p>
               </div>
-            ))}
-            <div ref={chatEndRef} />
-          </div>
-
-          <form onSubmit={handleSend} className="flex gap-2">
-            <input
-              className="flex-1 px-4 py-2 rounded-lg bg-transparent border outline-none"
-              placeholder="Ask about your channel..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg bg-cyan-600 text-white"
-            >
-              Send
-            </button>
-          </form>
+            </a>
+          ))}
         </div>
+      </div>
+
+      {/* AI Assistant */}
+      <div
+        className={`rounded-2xl p-6 shadow-xl border backdrop-blur-md ${
+          theme === "dark"
+            ? "bg-gray-800/80 border-gray-700"
+            : "bg-cyan-50 border border-cyan-600"
+        }`}
+      >
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+          <Bot className="w-6 h-6 text-blue-400" />
+          AI Assistant
+        </h2>
+
+        <div className="flex items-center gap-3">
+          <input
+            type="text"
+            className={`flex-1 px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 placeholder-gray-400 ${
+              theme === "dark"
+                ? "bg-gray-900/60 text-white border-gray-700 focus:ring-blue-500"
+                : "bg-white text-black border-cyan-600 focus:ring-cyan-500"
+            }`}
+            placeholder="Ask AI about your channel..."
+            value={aiQuery}
+            onChange={(e) => setAiQuery(e.target.value)}
+          />
+          <button
+            onClick={handleAiAsk}
+            disabled={aiLoading}
+            className="px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-lg font-semibold transition disabled:opacity-50 text-white"
+          >
+            {aiLoading ? "Thinking..." : "Ask AI"}
+          </button>
+        </div>
+
+        {aiResponse && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`mt-5 p-5 rounded-xl shadow-inner leading-relaxed whitespace-pre-line ${
+              theme === "dark"
+                ? "bg-gray-900/70 border border-gray-700 text-gray-100"
+                : "bg-white border border-cyan-600 text-gray-800"
+            }`}
+          >
+            {aiResponse}
+          </motion.div>
+        )}
       </div>
     </div>
   );

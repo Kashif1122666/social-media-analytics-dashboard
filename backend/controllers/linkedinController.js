@@ -3,6 +3,7 @@ import axios from "axios";
 import qs from "qs";
 import User from "../models/User.js";
 import env from "dotenv";
+import jwt from "jsonwebtoken";
 env.config();
 
 // Step 1: Redirect to LinkedIn authorization
@@ -106,8 +107,12 @@ export const linkedinCallback = async (req, res) => {
         console.error("Login error:", err);
         return res.redirect(`${process.env.FRONTEND_URL}/linkedin_failed`);
       }
-      
-      return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+      const token = jwt.sign(
+                 { id: user._id },
+                  process.env.JWT_SECRET,
+                 { expiresIn: "7d" }
+                            );
+      return res.redirect(`${process.env.FRONTEND_URL}/dashboard?token=${token}`);
     });
 
   } catch (error) {

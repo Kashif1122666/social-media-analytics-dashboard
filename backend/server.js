@@ -44,7 +44,7 @@ app.use(express.json());
 app.use("/auth", youtubeRoutes);
 
 //ai 
-app.use("/api", aiRoutes);
+app.use("/api/ai", aiRoutes);
 //google
 app.use('/auth', authRoutes);
 //linkedin
