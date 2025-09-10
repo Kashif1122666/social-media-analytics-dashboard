@@ -147,3 +147,47 @@ export const testLinkedinProfile = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch profile", details: error.response?.data });
   }
 };
+
+// controllers/linkedinController.js
+export const getLinkedinStats = async (req, res) => {
+  try {
+    if (!req.user || !req.user.linkedinAccessToken) {
+      return res.status(401).json({ error: "Not authenticated with LinkedIn" });
+    }
+
+    const headers = {
+      Authorization: `Bearer ${req.user.linkedinAccessToken}`,
+    };
+
+    // ✅ Profile
+    const profileRes = await axios.get("https://api.linkedin.com/v2/me", { headers });
+
+    // ✅ Email
+    const emailRes = await axios.get(
+      "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
+      { headers }
+    );
+
+    // ✅ Followers (organization or individual)
+    const followersRes = await axios.get(
+      "https://api.linkedin.com/v2/networkSizes/urn:li:person:" + profileRes.data.id + "?edgeType=CompanyFollowedByMember",
+      { headers }
+    ).catch(() => ({ data: { firstDegreeSize: 0 } }));
+
+    const stats = {
+      id: profileRes.data.id,
+      name: profileRes.data.localizedFirstName + " " + profileRes.data.localizedLastName,
+      headline: profileRes.data.headline || "",
+      avatar: profileRes.data.profilePicture?.["displayImage~"]?.elements?.[0]?.identifiers?.[0]?.identifier || "",
+      email: emailRes.data.elements[0]["handle~"].emailAddress,
+      followers: followersRes.data.firstDegreeSize || 0,
+      posts: Math.floor(Math.random() * 20), // you can fetch UGC posts later
+      engagements: Math.floor(Math.random() * 100), // placeholder until you fetch engagement API
+    };
+
+    res.json(stats);
+  } catch (err) {
+    console.error("❌ LinkedIn Stats Error:", err.response?.data || err.message);
+    res.status(500).json({ error: "Failed to fetch LinkedIn stats" });
+  }
+};

@@ -5,7 +5,7 @@ import passport from "./config/passport.js";
 import mongoose from "mongoose";
 import { Session } from "express-session";
 import authRoutes from "./routes/auth.js";
-import linkedinRoutes from "./routes/linkedinRoutes.js";
+// import linkedinRoutes from "./routes/linkedinRoutes.js";
 import redditRoutes from "./routes/redditRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import env from "dotenv";
@@ -48,7 +48,7 @@ app.use("/api/ai", aiRoutes);
 //google
 app.use('/auth', authRoutes);
 //linkedin
-app.use("/", linkedinRoutes);
+// app.use("/", linkedinRoutes);
 //reddit
 app.use("/", redditRoutes);
 

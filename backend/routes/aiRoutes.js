@@ -78,4 +78,75 @@ Please provide helpful, specific, and actionable advice tailored to their channe
   }
 });
 
+
+router.post("/ask-ai", authMiddleware, async (req, res) => {
+  try {
+    const { query } = req.body; // User's AI question
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+
+    if (!user || !user.platforms?.reddit) {
+      return res.status(400).json({ error: "Reddit not connected!" });
+    }
+
+    const reddit = user.platforms.reddit;
+    const stats = reddit.stats || {};
+    const recentPosts = reddit.recentPosts || [];
+
+    // Build a detailed prompt for Gemini AI
+    const prompt = `
+You are an AI assistant helping users understand and improve their Reddit presence.
+
+Reddit Username: ${reddit.redditUsername}
+Avatar: ${reddit.avatar || "No avatar available"}
+Link Karma: ${stats.linkKarma || 0}
+Comment Karma: ${stats.commentKarma || 0}
+Total Karma: ${stats.totalKarma || 0}
+Last Updated: ${stats.lastUpdated ? new Date(stats.lastUpdated).toLocaleString() : "Unknown"}
+
+Recent Posts:
+${recentPosts.length > 0
+  ? recentPosts
+      .map(
+        (p) => `
+- Title: ${p.title || "No title"}
+  Upvotes: ${p.upvotes || 0}
+  Comments: ${p.comments || 0}
+  Posted At: ${p.postedAt ? new Date(p.postedAt).toLocaleString() : "Unknown"}
+`
+      )
+      .join("\n")
+  : "No recent posts available."}
+
+The user asked: "${query}"
+
+Please provide actionable, detailed advice tailored to their Reddit stats and recent activity.
+    `;
+
+    // Call Gemini API
+    const response = await axios.post(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+      {
+        contents: [{ parts: [{ text: prompt }] }],
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY,
+        },
+      }
+    );
+
+    const aiMessage =
+      response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Sorry, AI could not generate insights right now.";
+
+    res.json({ answer: aiMessage });
+  } catch (err) {
+    console.error("Reddit AI Error:", err?.response?.data || err.message);
+    res.status(500).json({ error: "AI request failed" });
+  }
+});
+
 export default router;

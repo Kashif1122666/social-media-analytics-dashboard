@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String }, // only for Local login
     provider: {
       type: String,
-      enum: ["local", "google", "linkedin"],
+      enum: ["local", "google", "linkedin", "reddit"],
       default: "local",
     },
     googleId: { type: String },
@@ -60,20 +60,51 @@ const userSchema = new mongoose.Schema(
         accessToken: String,
         refreshToken: String,
       },
+      linkedin: {
+    linkedinId: String,
+    accessToken: String,
+    refreshToken: String,
+    stats: {
+      followers: { type: Number, default: 0 },
+      posts: { type: Number, default: 0 },
+      engagements: { type: Number, default: 0 },
+      lastUpdated: { type: Date, default: Date.now },
+    },
+  },
+      reddit: {
+  redditId: String,           // account id (t2_xxx)
+  redditUsername: String,     // account username
+  avatar: String,             // profile icon img
+  accessToken: String,
+  refreshToken: String,
 
-linkedinId: { type: String },
-linkedinAccessToken: { type: String },
-linkedinData: {
-  posts: { type: Number, default: 0 },
-  followers: { type: Number, default: 0 },
-  engagements: { type: Number, default: 0 }
+  stats: {
+    linkKarma: { type: Number, default: 0 },     // post karma
+    commentKarma: { type: Number, default: 0 },  // comment karma
+    totalKarma: { type: Number, default: 0 },    // link + comment
+    awardsReceived: { type: Number, default: 0 },// total awards
+    posts: { type: Number, default: 0 },         // number of submissions fetched
+    comments: { type: Number, default: 0 },      // number of comments fetched
+    lastUpdated: { type: Date, default: Date.now },
+  },
+
+  recentPosts: {
+    type: [
+      {
+        postId: String,
+        title: String,
+        subreddit: String,
+        score: Number,          // upvotes - downvotes
+        upvotes: Number,
+        comments: Number,
+        createdAt: Date,
+        url: String,
+      },
+    ],
+    default: [],
+  },
 },
 
-      reddit: {
-        redditId: String,
-        redditUsername: String,
-        accessToken: String,
-      },
     },
   },
   { timestamps: true }

@@ -25,7 +25,13 @@ const SignUp = () => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
     if (token) {
-      localStorage.setItem("token", token);
+      const existing = localStorage.getItem("token");
+    if (existing) {
+      localStorage.removeItem("token");
+    }
+
+    // Always set the new token
+    localStorage.setItem("token", token);
       toast.success("Google signup successful 🚀");
       window.history.replaceState({}, document.title, "/dashboard"); // clean URL
       navigate("/dashboard");

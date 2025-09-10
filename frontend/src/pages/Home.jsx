@@ -13,6 +13,7 @@ import { Bot, BarChart3, Users } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle"; 
 import { useContext } from "react";
 import { ThemeContext } from "../context/ThemeContext";
+import Footer from "../components/Footer";
 
 const sampleData = [
   { name: "Mon", value: 40 },
@@ -30,6 +31,7 @@ export default function Home() {
   const { theme } = useContext(ThemeContext);
 
   return (
+    <>
     <div
       className={`min-h-screen flex flex-col items-center px-6 py-12 transition-colors duration-500 ${
         theme === "dark"
@@ -63,7 +65,7 @@ export default function Home() {
             theme === "dark" ? "text-gray-300" : "text-gray-700"
           }`}
         >
-          Track engagement, monitor competitors, and unlock deep insights with
+          Track engagement, monitor trends, and unlock deep insights with
           our next-gen AI assistant.
         </p>
         <button
@@ -85,7 +87,7 @@ export default function Home() {
           {
             icon: <Users className="w-10 h-10 text-cyan-500" />,
             title: "Cross-Platform",
-            desc: "Track Reddit, YouTube, LinkedIn — all in one dashboard.",
+            desc: "Track Reddit, YouTube,  — all in one dashboard.",
           },
           {
             icon: <Bot className="w-10 h-10 text-cyan-500" />,
@@ -161,5 +163,7 @@ export default function Home() {
         </ResponsiveContainer>
       </motion.div>
     </div>
+      <Footer />
+      </>
   );
 }

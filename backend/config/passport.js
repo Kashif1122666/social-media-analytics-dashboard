@@ -1,7 +1,7 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as RedditStrategy } from "passport-reddit";
-import { Strategy as LinkedInStrategy } from '@sokratis/passport-linkedin-oauth2';
+import { Strategy as LinkedInStrategy } from "passport-linkedin-oauth2";
 import { Strategy as LocalStrategy } from "passport-local";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
@@ -10,6 +10,7 @@ import { Strategy as CustomStrategy } from "passport-custom";
 import { google } from "googleapis";
 import axios from "axios";
 import jwt from "jsonwebtoken";
+import OAuth2Strategy  from "passport-oauth2";
 
 env.config();
 
@@ -276,23 +277,39 @@ passport.use(
         }
       );
 
-      const { access_token } = tokenRes.data;
+      const { access_token, refresh_token } = tokenRes.data;
       const meRes = await axios.get("https://oauth.reddit.com/api/v1/me", {
         headers: { Authorization: `Bearer ${access_token}`, "User-Agent": "social-media-analytics-dashboard/1.0 by EffectiveBus186" },
       });
 
       const profile = meRes.data;
-      let user = await User.findOne({ redditId: profile.id });
+        const token = req.query.state;
+        if (!token) return done(new Error("No token provided"));
 
-      if (!user) {
-        user = new User({
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        let user = await User.findById(decoded.id);
+
+ if (!user) {
+        return done(new Error("User not found"))
+      } else {
+        // 🔄 Update existing Reddit platform tokens & stats
+        user.platforms.reddit = {
+          ...user.platforms.reddit,
           redditId: profile.id,
           redditUsername: profile.name,
+          avatar: profile.icon_img || "",
           accessToken: access_token,
-        });
-      } else {
-        user.accessToken = access_token;
+          refreshToken: refresh_token || user.platforms.reddit.refreshToken,
+          stats: {
+            linkKarma: profile.link_karma || 0,
+            commentKarma: profile.comment_karma || 0,
+            totalKarma:
+              (profile.link_karma || 0) + (profile.comment_karma || 0),
+            lastUpdated: new Date(),
+          },
+        };
       }
+
       await user.save();
 
       return done(null, user);
@@ -306,58 +323,51 @@ passport.use(
 // ===================
 // LINKEDIN STRATEGY (Updated)
 // ===================
-passport.use(
-  new LinkedInStrategy(
-    {
-      clientID: process.env.LINKEDIN_CLIENT_ID,
-      clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-      callbackURL: process.env.LINKEDIN_REDIRECT_URL,
-      scope: ["openid","profile","email","r_member_social","w_member_social"],
-      state: true,
-      passReqToCallback: true,
-    },
-    async (req, accessToken, refreshToken, params, done) => {
-      try {
-        const profile = await fetchLinkedInProfile(accessToken);
-        if (!profile || !profile.id) throw new Error("Failed to fetch LinkedIn profile");
 
-        const linkedinId = profile.id;
-        const email = profile.email || "";
-        const name = `${profile.firstName} ${profile.lastName}` || "";
-        const avatar = profile.profilePicture?.displayImage || "";
-        // ... your existing user handling logic
-      } catch (err) {
-        console.error("❌ LinkedIn auth error:", err);
-        return done(err, null);
-      }
-    }
-  )
-);
 
-async function fetchLinkedInProfile(accessToken) {
-  try {
-    const profileResponse = await fetch('https://api.linkedin.com/v2/me', {
-      headers: { 'Authorization': `Bearer ${accessToken}`, 'Connection': 'Keep-Alive' },
-    });
-    if (!profileResponse.ok) throw new Error(`LinkedIn API error: ${profileResponse.statusText}`);
-    const profileData = await profileResponse.json();
+// passport.use(
+//   "linkedin",
+//   new OAuth2Strategy(
+//     {
+//       authorizationURL: "https://www.linkedin.com/oauth/v2/authorization",
+//       tokenURL: "https://www.linkedin.com/oauth/v2/accessToken",
+//       clientID: process.env.LINKEDIN_CLIENT_ID,
+//       clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+//       callbackURL: process.env.LINKEDIN_REDIRECT_URL,
+//       scope: ["openid", "profile", "email", "w_member_social"],
+//     },
+//     async (accessToken, refreshToken, params, profile, done) => {
+//       try {
+//         // Fetch basic profile
+//         const me = await axios.get("https://api.linkedin.com/v2/me", {
+//           headers: { Authorization: `Bearer ${accessToken}` },
+//         });
 
-    const emailResponse = await fetch('https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', {
-      headers: { 'Authorization': `Bearer ${accessToken}`, 'Connection': 'Keep-Alive' },
-    });
+//         // Fetch email
+//         const email = await axios.get(
+//           "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
+//           { headers: { Authorization: `Bearer ${accessToken}` } }
+//         );
 
-    let email = '';
-    if (emailResponse.ok) {
-      const emailData = await emailResponse.json();
-      email = emailData.elements?.[0]?.['handle~']?.emailAddress || '';
-    }
+//         const userProfile = {
+//           id: me.data.id,
+//           firstName: me.data.localizedFirstName,
+//           lastName: me.data.localizedLastName,
+//           email: email.data.elements[0]["handle~"].emailAddress,
+//         };
 
-    return { id: profileData.id, firstName: profileData.localizedFirstName, lastName: profileData.localizedLastName, email, profilePicture: profileData.profilePicture || {} };
-  } catch (error) {
-    console.error('Error fetching LinkedIn profile:', error);
-    throw error;
-  }
-}
+//         return done(null, userProfile);
+//       } catch (err) {
+//         console.error("LinkedIn fetch error:", err.response?.data || err.message);
+//         return done(err, null);
+//       }
+//     }
+//   )
+// );
+
+
+
+
 
 // ===================
 // SERIALIZE & DESERIALIZE

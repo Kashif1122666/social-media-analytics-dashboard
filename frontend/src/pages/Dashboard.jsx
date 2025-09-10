@@ -5,6 +5,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import { useContext, useEffect } from "react";
 import { ThemeContext } from "../context/ThemeContext";
 import { toast } from "react-toastify";
+import Footer from "../components/Footer";
 
 export default function OAuthPage() {
   const { theme } = useContext(ThemeContext);
@@ -33,17 +34,17 @@ export default function OAuthPage() {
       ],
       link: `${import.meta.env.VITE_BACKEND_URL}/auth/youtube`,
     },
-    {
-      name: "LinkedIn",
-      icon: <FaLinkedin className="text-blue-600 w-14 h-14" />,
-      desc: "Get insights into your professional presence by analyzing posts, engagements, and network growth on LinkedIn.",
-      features: [
-        "Measure post reach and engagement",
-        "Analyze company page performance",
-        "Discover content trends in your industry",
-      ],
-      link: `${import.meta.env.VITE_BACKEND_URL}/auth/linkedin`,
-    },
+    // {
+    //   name: "LinkedIn",
+    //   icon: <FaLinkedin className="text-blue-600 w-14 h-14" />,
+    //   desc: "Get insights into your professional presence by analyzing posts, engagements, and network growth on LinkedIn.",
+    //   features: [
+    //     "Measure post reach and engagement",
+    //     "Analyze company page performance",
+    //     "Discover content trends in your industry",
+    //   ],
+    //   link: `${import.meta.env.VITE_BACKEND_URL}/auth/linkedin`,
+    // },
     {
       name: "Reddit",
       icon: <FaReddit className="text-orange-500 w-14 h-14" />,
@@ -66,11 +67,12 @@ export default function OAuthPage() {
       }
 
       // 🔹 Attach JWT in `state` query param only for YouTube
-      if (provider.name === "YouTube") {
-        window.location.href = `${provider.link}?state=${token}`;
-      } else {
-        window.location.href = provider.link;
-      }
+      // if (provider.name === "YouTube") {
+      //   window.location.href = `${provider.link}?state=${token}`;
+      // } else {
+      //   window.location.href = provider.link;
+      // }
+      window.location.href = `${provider.link}?state=${token}`;
     } catch (err) {
       console.error(`${provider.name} OAuth error:`, err);
       toast.error(`Failed to connect ${provider.name}`);
@@ -78,6 +80,7 @@ export default function OAuthPage() {
   };
 
   return (
+    <>
     <div
       className={`min-h-screen flex flex-col items-center px-6 py-12 transition-colors duration-500 ${
         theme === "dark"
@@ -85,8 +88,24 @@ export default function OAuthPage() {
           : "bg-gradient-to-br from-white via-gray-100 to-cyan-100 text-black"
       }`}
     >
-      <div className="absolute top-6 right-6">
+          {/* Theme Toggle + Buttons Top Right */}
+      <div className="absolute top-6 right-6 flex items-center gap-4">
         <ThemeToggle />
+      
+        {/* Logout Button */}
+        <button
+          onClick={() => {
+            localStorage.removeItem("token"); // clear JWT
+            window.location.href = '/';
+          }}
+          className={`px-3 py-2 rounded-xl font-semibold shadow-lg transition-colors text-sm ${
+            theme === "dark"
+              ? "bg-red-600 text-white hover:bg-red-700"
+              : "bg-red-100 text-red-800 border border-red-400 hover:bg-red-200"
+          }`}
+        >
+          Logout
+        </button>
       </div>
 
       <motion.div
@@ -116,7 +135,7 @@ export default function OAuthPage() {
         </p>
       </motion.div>
 
-      <div className="grid md:grid-cols-3 gap-10 w-full max-w-7xl">
+      <div className="grid md:grid-cols-2 gap-10 w-full max-w-7xl">
         {oauthProviders.map((provider, idx) => (
           <motion.div
             key={idx}
@@ -152,5 +171,7 @@ export default function OAuthPage() {
         ))}
       </div>
     </div>
+    <Footer/>
+    </>
   );
 }

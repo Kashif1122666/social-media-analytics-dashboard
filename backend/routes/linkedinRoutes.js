@@ -1,22 +1,54 @@
-// routes/linkedinRoutes.js
-import express from "express";
-import {
-  linkedinAuth,
-  linkedinCallback,
-  testLinkedinProfile
-} from "../controllers/linkedinController.js";
-import env from "dotenv";
-env.config();
+// // routes/linkedin.js
+// import express from "express";
+// import passport from "passport";
+// import jwt from "jsonwebtoken";
+// import { authMiddleware } from "../middleware/auth.js";
+// import User from "../models/User.js";
 
-const router = express.Router();
+// const router = express.Router();
 
-// Step 1: Redirect to LinkedIn authorization
-router.get("/auth/linkedin", linkedinAuth);
+// // start LinkedIn OAuth (frontend provides state in URL)
+// router.get(
+//   "/auth/linkedin",
+//   passport.authenticate("linkedin", { session: false })
+// );
 
-// Step 2: Handle callback and exchange code for tokens
-router.get("/auth/linkedin/callback", linkedinCallback);
+// // callback (handled by passport + strategy)
+// router.get(
+//   "/auth/linkedin/callback",
+//   passport.authenticate("linkedin", { session: false, failureRedirect: "/login" }),
+//   (req, res) => {
+//     res.redirect(`${process.env.FRONTEND_URL}/linkedin-analysis?success=true`);
+//   }
+// );
 
-// Additional route to test LinkedIn API access
-router.get("/linkedin/test-profile", testLinkedinProfile);
+// // =====================
+// // @desc Fetch LinkedIn stats for logged-in user
+// // =====================
+// router.get("/linkedin/stats", authMiddleware, async (req, res) => {
+//   try {
+//     if (!req.user.linkedin || !req.user.linkedin.accessToken) {
+//       return res.status(400).json({ msg: "LinkedIn not connected" });
+//     }
 
-export default router;
+//     // Example: get basic profile
+//     const response = await fetch("https://api.linkedin.com/v2/me", {
+//       headers: {
+//         Authorization: `Bearer ${req.user.linkedin.accessToken}`,
+//       },
+//     });
+
+//     const profile = await response.json();
+
+//     res.json({
+//       name: profile.localizedFirstName + " " + profile.localizedLastName,
+//       id: profile.id,
+//       connected: true,
+//     });
+//   } catch (err) {
+//     console.error("LinkedIn stats error:", err);
+//     res.status(500).json({ msg: "Failed to fetch LinkedIn stats" });
+//   }
+// });
+
+// export default router;

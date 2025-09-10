@@ -7,6 +7,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recha
 import { FaYoutube } from "react-icons/fa";
 import { ThemeContext } from "../context/ThemeContext";
 import ThemeToggle from "../components/ThemeToggle";
+import Footer from "../components/Footer";
 
 export default function YouTubeAnalysis() {
   const [data, setData] = useState(null);
@@ -124,6 +125,7 @@ export default function YouTubeAnalysis() {
     : [];
 
   return (
+    <>
     <div
       className={`min-h-screen p-6 transition-colors duration-500 relative ${
         theme === "dark"
@@ -131,9 +133,38 @@ export default function YouTubeAnalysis() {
           : "bg-gradient-to-r from-white via-gray-100 to-cyan-100 text-black"
       }`}
     >
-      {/* Theme Toggle Top Right */}
-      <div className="absolute top-6 right-6">
+           {/* Theme Toggle + Buttons Top Right */}
+      <div className="absolute top-6 right-6 flex items-center gap-4">
         <ThemeToggle />
+      
+        {/* Logout Button */}
+        <button
+          onClick={() => {
+            localStorage.removeItem("token"); // clear JWT
+            window.location.href = '/';
+          }}
+          className={`px-3 py-2 rounded-xl font-semibold shadow-lg transition-colors text-sm ${
+            theme === "dark"
+              ? "bg-red-600 text-white hover:bg-red-700"
+              : "bg-red-100 text-red-800 border border-red-400 hover:bg-red-200"
+          }`}
+        >
+          Logout
+        </button>
+      
+        {/* Back to Dashboard Button */}
+        <button
+          onClick={() => {
+            window.location.href = `/dashboard`;
+          }}
+          className={`px-3 py-2 rounded-xl font-semibold shadow-lg transition-colors text-sm ${
+            theme === "dark"
+              ? "bg-blue-600 text-white hover:bg-blue-700"
+              : "bg-blue-100 text-blue-800 border border-blue-400 hover:bg-blue-200"
+          }`}
+        >
+          Back
+        </button>
       </div>
 
       {/* Channel Overview */}
@@ -403,5 +434,7 @@ export default function YouTubeAnalysis() {
         )}
       </div>
     </div>
+    <Footer/>
+    </>
   );
 }
