@@ -52,6 +52,10 @@ app.use('/auth', authRoutes);
 //reddit
 app.use("/", redditRoutes);
 
+app.get("/", (req, res) => {
+  res.send("server is running...");
+});
+
 
 
 
