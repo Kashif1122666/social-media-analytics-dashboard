@@ -24,7 +24,7 @@ const sampleData = [
 ];
 
 const handleClick = () => {
-  window.location.href = "http://localhost:5173/login";
+  window.location.href = `${import.meta.env.VITE_BACKEND_URL}/login`;
 };
 
 export default function Home() {
