@@ -24,7 +24,7 @@ const sampleData = [
 ];
 
 const handleClick = () => {
-  window.location.href = `${import.meta.env.VITE_BACKEND_URL}/login`;
+  window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/login`;
 };
 
 export default function Home() {
