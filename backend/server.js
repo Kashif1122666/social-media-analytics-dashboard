@@ -17,6 +17,9 @@ env.config();
 
 const app = express();
 
+
+// Middleware
+app.use(express.json());
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 
 
@@ -36,8 +39,7 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log("✅ MongoDB connected successfully"))
 .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// Middleware
-app.use(express.json());
+
 
             // Routes
 // youtube
@@ -57,6 +59,10 @@ app.get("/", (req, res) => {
 });
 
 
+app.use((err, req, res, next) => {
+  console.error("🔥 Server Error:", err.stack);
+  res.status(500).json({ message: "Internal Server Error", error: err.message });
+});
 
 
 const PORT = process.env.PORT || 5000;
