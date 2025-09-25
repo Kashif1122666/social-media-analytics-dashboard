@@ -129,7 +129,7 @@ export default function OAuthPage() {
           }`}
         >
           Our platform empowers you to bring together your data from multiple
-          social channels. By connecting YouTube, LinkedIn, and Reddit, you’ll
+          social channels. By connecting YouTube, Reddit, and more coming soon, you’ll
           unlock cross-platform analytics powered by AI — helping you grow your
           audience, strengthen your brand, and stay ahead of the competition.
         </p>
