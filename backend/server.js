@@ -54,34 +54,42 @@ app.use('/auth', authRoutes);
 //reddit
 app.use("/", redditRoutes);
 
-app.get("/", async (req, res) => {
-  try {
-    // Check mongoose connection state
-    const dbState = mongoose.connection.readyState; 
-    // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+// app.get("/", async (req, res) => {
+//   try {
+//     // Check mongoose connection state
+//     const dbState = mongoose.connection.readyState; 
+//     // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
 
-    let statusMsg = "❌ DB not connected";
-    if (dbState === 1) statusMsg = "✅ DB connected";
-    if (dbState === 2) statusMsg = "⏳ DB connecting";
+//     let statusMsg = "❌ DB not connected";
+//     if (dbState === 1) statusMsg = "✅ DB connected";
+//     if (dbState === 2) statusMsg = "⏳ DB connecting";
 
-    res.json({
-      message: "Server is running...",
-      db: statusMsg
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Error checking DB", error: err.message });
-  }
+//     res.json({
+//       message: "Server is running...",
+//       db: statusMsg
+//     });
+//   } catch (err) {
+//     res.status(500).json({ message: "Error checking DB", error: err.message });
+//   }
+// });
+
+
+
+// app.use((err, req, res, next) => {
+//   console.error("🔥 Server Error:", err.stack);
+//   res.status(500).json({ message: "Internal Server Error", error: err.message });
+// });
+
+app.get("/", (req, res) => {
+  res.send("server is running...");
 });
 
 
-
-app.use((err, req, res, next) => {
-  console.error("🔥 Server Error:", err.stack);
-  res.status(500).json({ message: "Internal Server Error", error: err.message });
-});
-
-
-const PORT = process.env.PORT || 5000;
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+});  
+}
+
+export default app;
