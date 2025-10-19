@@ -9,6 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import YouTubeAnalysis from './pages/YouTubeAnalysis';
 import RedditAnalysis from './pages/RedditAnalysis';
+import AuthSuccess from './pages/AuthSuccess';
 // import LinkedinAnalysis from './pages/LinkedInAnalysis';
 
 const App = () => {
@@ -18,6 +19,7 @@ const App = () => {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="/auth/success" element={<AuthSuccess />} />
        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>}/>
        <Route path="/YouTubeAnalysis" element={<ProtectedRoute><YouTubeAnalysis /></ProtectedRoute>}/>
        <Route path="/RedditAnalysis" element={<ProtectedRoute><RedditAnalysis /></ProtectedRoute>}/>
