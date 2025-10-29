@@ -54,7 +54,7 @@ Please provide helpful, specific, and actionable advice tailored to their channe
 
     // Call Gemini API
     const response = await axios.post(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
       {
         contents: [{ parts: [{ text: prompt }] }],
       },
@@ -126,7 +126,7 @@ Please provide actionable, detailed advice tailored to their Reddit stats and re
 
     // Call Gemini API
     const response = await axios.post(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
       {
         contents: [{ parts: [{ text: prompt }] }],
       },
